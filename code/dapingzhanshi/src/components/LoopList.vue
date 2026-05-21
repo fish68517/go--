@@ -8,6 +8,8 @@
       <li>贴数</li>
       <li>药品味数</li>
       <li>流程环节</li>
+      <li>支付</li>
+      <li>上链</li>
     </ul>
     <ul class="list">
       <li class="list-item" :class="{ 'hover': isAnimation }" v-for="item in showData" :key="item.prescription_number">
@@ -18,6 +20,8 @@
         <div>{{item.dosage}}</div>
         <div>{{item.drug_count}}</div>
         <div>{{item.current_state}}</div>
+        <div>{{formatPayStatus(item.pay_status)}}</div>
+        <div>{{formatChainStatus(item.chain_status)}}</div>
       </li>
     </ul>
   </div>
@@ -40,7 +44,13 @@ export default {
   computed:{
     dataArr(){
       console.log("looplist-computed"+this.timeString);
-      return this.$store.state.mapData
+      return this.currentRows()
+    }
+  },
+  watch: {
+    dataArr() {
+      this.pageIndex = 1;
+      this.showData = this.dataArr.slice(0, 14);
     }
   },
   mounted() {
@@ -52,11 +62,39 @@ export default {
     clearTimeout(this.timeoutA);
   },
   methods: {
+currentRows(){
+  const mapData = this.$store.state.mapData;
+  if (Array.isArray(mapData) && mapData.length > 0 && Array.isArray(mapData[0].data)) {
+    return mapData[0].data;
+  }
+  if (Array.isArray(mapData)) {
+    return mapData;
+  }
+  return [];
+},
 desensitizeName(name){
+  if (!name) {
+    return '';
+  }
   if (name.length<=2){
     return name.split("").map(()=>'*').join("");
   }
   return name.charAt(0)+"*".repeat(name.length-2)+name.charAt(name.length-1);
+},
+formatPayStatus(status){
+  if (status === 'PAID') {
+    return '已支付';
+  }
+  return status ? '未支付' : '未支付';
+},
+formatChainStatus(status){
+  if (status === 'SUCCESS') {
+    return '已上链';
+  }
+  if (status === 'FAILED') {
+    return '失败';
+  }
+  return status || '未上链';
 },
     //启用滚屏
     goLoop(){
@@ -88,7 +126,7 @@ desensitizeName(name){
     //滚屏分页
     paging() {
       this.pageIndex++;
-      let arr = this.dataArr[0].data;
+      let arr = this.dataArr;
       let endNum = this.pageIndex * 14;
       let startNum = (this.pageIndex-1)*14
       this.showData = arr.slice(startNum, endNum);

@@ -223,7 +223,7 @@
                         <td>{{.Row2.DrugWeight}}</td>
                         <td>{{.Row2.Dose}}</td>
                         <td>{{.Row2.DrugWeights}}</td>
-                        <td>{{.Row1.DrugProductDescription}}</td>
+                        <td>{{.Row2.DrugProductDescription}}</td>
                         {{else}}
                         <!-- 如果这一组只有一个药品，则填充空单元格以保持表格格式 -->
                         <td colspan="6"></td>
@@ -235,6 +235,56 @@
 
                     </tbody>
                 </table>
+
+                <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+                    <legend style="padding: 0 200px;">药材价格明细</legend>
+                </fieldset>
+                <table class="layui-table">
+                    <thead>
+                    <tr>
+                        <th>药品名称</th>
+                        <th>药品编码</th>
+                        <th>进货源地</th>
+                        <th>入库批次</th>
+                        <th>总剂量</th>
+                        <th>单价</th>
+                        <th>小计</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range .drugItems}}
+                    <tr>
+                        <td>{{.DrugProductName}}</td>
+                        <td>{{.DrugProductNumber}}</td>
+                        <td>{{.PurchaseOrigin}}</td>
+                        <td>{{.BatchNo}}</td>
+                        <td>{{.DrugWeights}}</td>
+                        <td>{{.DrugPrice}}</td>
+                        <td>{{.TotalPrices}}</td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="7" style="text-align:center;">暂无药材明细</td>
+                    </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+                {{if .payment}}
+                <div class="layui-card" style="margin-top: 10px;">
+                    <div class="layui-card-header">模拟支付</div>
+                    <div class="layui-card-body">
+                        <p>应付金额：<strong>{{.payment.TotalAmount}}</strong> 元</p>
+                        <p>支付状态：<strong id="payStatus">{{.payment.PayStatus}}</strong></p>
+                        <p>实付金额：<span id="payAmount">{{.payment.PayAmount}}</span> 元</p>
+                        <p>支付方式：<span id="payMethod">{{.payment.PayMethod}}</span></p>
+                        <p>模拟交易号：<span id="mockTradeNo">{{.payment.MockTradeNo}}</span></p>
+                        <p>支付时间：<span id="paidAt">{{.payment.PaidAt}}</span></p>
+                        {{if ne .payment.PayStatus "PAID"}}
+                        <button type="button" class="layui-btn" id="mockPayBtn">模拟支付</button>
+                        {{end}}
+                    </div>
+                </div>
+                {{end}}
 
             </fieldset>
 
@@ -268,6 +318,36 @@
 
         form.on('switch(status)', function(data) {
             $(data.elem).attr('type', 'hidden').val(this.checked ? 1 : 2);})
+
+        $('#mockPayBtn').on('click', function(){
+            $.ajax({
+                type: 'POST',
+                url: '/prescription/payment/mock_pay',
+                data: JSON.stringify({
+                    prescription_id: {{.info.ID}},
+                    pay_method: 'CASH_MOCK'
+                }),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(res){
+                    if (res.code !== 0) {
+                        layer.msg(res.msg || '支付失败', {icon: 5});
+                        return;
+                    }
+                    var data = res.data || {};
+                    $('#payStatus').text(data.pay_status || 'PAID');
+                    $('#payAmount').text(data.pay_amount || 0);
+                    $('#payMethod').text(data.pay_method || '');
+                    $('#mockTradeNo').text(data.mock_trade_no || '');
+                    $('#paidAt').text(data.paid_at || '');
+                    $('#mockPayBtn').remove();
+                    layer.msg('支付成功', {icon: 1});
+                },
+                error: function(){
+                    layer.msg('支付请求异常', {icon: 5});
+                }
+            });
+        });
     })
 </script>
 <style>

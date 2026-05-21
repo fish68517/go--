@@ -29,6 +29,47 @@
       <div v-if="hasProcesses">
         <!-- 显示查询结果 -->
         <Timeline :processes="processes" />
+        <section v-if="medicines.length" class="trace-panel">
+          <h3>药材来源明细</h3>
+          <table class="trace-table">
+            <thead>
+              <tr>
+                <th>药材</th>
+                <th>编码</th>
+                <th>源地</th>
+                <th>批次</th>
+                <th>数量</th>
+                <th>单价</th>
+                <th>小计</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in medicines" :key="(item.drug_product_number || '') + '-' + (item.batch_no || '') + '-' + index">
+                <td>{{ item.drug_product_name }}</td>
+                <td>{{ item.drug_product_number }}</td>
+                <td>{{ item.purchase_origin }}</td>
+                <td>{{ item.batch_no }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.unit_price }}</td>
+                <td>{{ item.total_price }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <section v-if="payment.pay_status || blockchain.chain_status" class="trace-panel">
+          <h3>支付与上链信息</h3>
+          <div class="trace-meta">
+            <p>支付状态：{{ payment.pay_status || '未记录' }}</p>
+            <p>应付金额：{{ payment.total_amount || 0 }} 元</p>
+            <p>实付金额：{{ payment.pay_amount || 0 }} 元</p>
+            <p>支付方式：{{ payment.pay_method || '未记录' }}</p>
+            <p>模拟交易号：{{ payment.mock_trade_no || '未记录' }}</p>
+            <p>支付时间：{{ payment.paid_at || '未记录' }}</p>
+            <p>上链状态：{{ blockchain.chain_status || '未上链' }}</p>
+            <p>交易ID：{{ blockchain.tx_id || '未记录' }}</p>
+            <p>Payload Hash：{{ blockchain.payload_hash || '未记录' }}</p>
+          </div>
+        </section>
       </div>
       <div v-else>
         <!-- 无查询结果时显示提示信息 -->
@@ -57,6 +98,9 @@ export default {
         recipe_code: '',
       },
       processes: [],
+      medicines: [],
+      payment: {},
+      blockchain: {},
     };
   },
   computed: {
@@ -67,6 +111,13 @@ export default {
   methods: {
     // 新增：数据转换函数 - 将原始数据转为Timeline需要的格式
     transformProcessData(rawData) {
+      if (Array.isArray(rawData?.process)) {
+        return rawData.process.map(item => ({
+          Step: item.Step || item.step,
+          Performer: item.Performer || item.performer || '未记录',
+          Timestamp: this.formatDisplayTime(item.Timestamp || item.timestamp),
+        })).filter(item => item.Timestamp);
+      }
       // 步骤映射配置：按【接方、审核、泡药、煎药、包装、发货】的固定顺序
       const stepConfig = [
         { stepName: '接方', performerKey: 'do_person', timeKey: 'do_time' },
@@ -78,25 +129,24 @@ export default {
       ];
 
       // 处理时间格式：去除秒级，保留 "YYYY-MM-DD HH:MM"
-      const formatTime = (timeStr) => {
-        if (!timeStr) return '';
-        // 先去除多余空格，再截取到分钟级
-        const cleanTime = timeStr.replace(/\s+/g, ' ').trim();
-        return cleanTime.split(':').slice(0, 2).join(':').replace(' ', ' ');
-      };
-
       // 生成目标格式数组
       return stepConfig.map(item => {
         // 处理空值：执行人为空时显示"未记录"
         const performer = rawData[item.performerKey] || '未记录';
-        const timestamp = formatTime(rawData[item.timeKey]);
+        const timestamp = this.formatDisplayTime(rawData[item.timeKey]);
         
         return {
           Step: item.stepName,
           Performer: performer,
           Timestamp: timestamp
         };
-      });
+      }).filter(item => item.Timestamp);
+    },
+
+    formatDisplayTime(timeStr) {
+      if (!timeStr) return '';
+      const cleanTime = String(timeStr).replace('T', ' ').replace(/\s+/g, ' ').trim();
+      return cleanTime.split(':').slice(0, 2).join(':').replace(' ', ' ');
     },
 
     async fetchMedicineProcess() {
@@ -119,9 +169,23 @@ export default {
         });
         
         console.log(response.data?.code);
-        if (response.status === 200 && response.data?.code === 200) {
+        if (response.status === 200 && (response.data?.code === 200 || response.data?.code === 0)) {
           // 核心修改：调用转换函数处理数据
-          this.processes = this.transformProcessData(response.data?.data || {});
+          let data = response.data?.data || {};
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              data = {};
+            }
+          }
+          if (Array.isArray(data)) {
+            data = data[0] || {};
+          }
+          this.processes = this.transformProcessData(data);
+          this.medicines = data.medicines || [];
+          this.payment = data.payment || {};
+          this.blockchain = data.blockchain || {};
           this.showForm = false;
         } else {
           console.error('查询失败:', response.data);
@@ -178,5 +242,42 @@ export default {
 }
 .query-button:hover {
   background-color: #359469; /* 增加hover效果 */
+}
+.trace-panel {
+  max-width: 1080px;
+  margin: 24px auto;
+  text-align: left;
+}
+.trace-panel h3 {
+  margin: 0 0 12px;
+  color: #23443a;
+}
+.trace-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+.trace-table th,
+.trace-table td {
+  border: 1px solid #d9e5df;
+  padding: 10px 12px;
+  text-align: center;
+}
+.trace-table th {
+  background: #eff7f2;
+  color: #23443a;
+}
+.trace-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px 18px;
+  padding: 16px;
+  border: 1px solid #d9e5df;
+  background: #fff;
+}
+.trace-meta p {
+  margin: 0;
+  color: #2f3f39;
+  word-break: break-all;
 }
 </style>

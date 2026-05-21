@@ -212,23 +212,32 @@
                                     var formData = e; // 将药品明细进行整理
                                     var drug = [];
                                     $('#medicinesTable tr').each(function(index, row) {
-                                        var drug_name = $(row).find('input[name^="medicines[' + index + '].drug_name"]').val();
-                                        var drug_code = $(row).find('input[name^="medicines[' + index + '].drug_code"]').val();
-                                        var drug_weight = $(row).find('input[name^="medicines[' + index + '].drug_weight"]').val();
-                                        var dose = $(row).find('input[name^="medicines[' + index + '].dose"]').val();
-                                        var quantity = $(row).find('input[name^="medicines[' + index + '].drug_weights"]').val();
-                                        var drug_product_description = $(row).find('input[name^="medicines[' + index + '].drug_product_description"]').val();
+                                        var $row = $(row);
+                                        var drug_name = $row.find('.drugNameInput').val() || $row.find('input[name$=".drug_name"]').val();
+                                        var drug_code = $row.find('.drugCodeInput').val() || $row.find('input[name$=".drug_code"]').val();
+                                        var stock_in_item_id = $row.find('.sourceSelect').val() || $row.find('select[name$=".stock_in_item_id"]').val();
+                                        var purchase_origin = $row.find('.purchaseOriginInput').val() || $row.find('input[name$=".purchase_origin"]').val();
+                                        var batch_no = $row.find('.batchNoInput').val() || $row.find('input[name$=".batch_no"]').val();
+                                        var drug_weight = $row.find('.drugWeightInput').val() || $row.find('input[name$=".drug_weight"]').val();
+                                        var dose = $row.find('.doseInput').val() || $row.find('input[name$=".dose"]').val();
+                                        var quantity = $row.find('.drugWeightsInput').val() || $row.find('input[name$=".drug_weights"]').val();
+                                        var drug_price = $row.find('.unitPriceInput').val() || $row.find('input[name$=".drug_price"]').val();
+                                        var total_prices = $row.find('.amountInput').val() || $row.find('input[name$=".total_prices"]').val();
+                                        var drug_product_description = $row.find('input[name$=".remark"]').val() || $row.find('input[name$=".drug_product_description"]').val();
                                         // 将每行药品的明细推入数组
                                         drug.push({
                                             drug_product_name: drug_name,
                                             drug_product_number: drug_code,
+                                            stock_in_item_id: parseInt(stock_in_item_id || 0),
+                                            purchase_origin: purchase_origin || "",
+                                            batch_no: batch_no || "",
                                             drug_weight: drug_weight,
                                             dose: dose,
                                             drug_weights: quantity,
-                                            drug_price:0,
+                                            drug_price: parseFloat(drug_price || 0),
                                             hospital_id:"",
                                             measurement_unit:"",
-                                            total_prices:0,
+                                            total_prices: parseFloat(total_prices || 0),
                                             drug_product_description:drug_product_description,
                                             prescription_id:0
 
@@ -240,15 +249,19 @@
                                     var formData = e; // 将药品明细进行整理
                                     var items = [];
                                     $('#medicinesTable tr').each(function(index, row) {
-                                        var product_name = $(row).find('input[name^="medicines[' + index + '].product_name"]').val();
-                                        var product_id = $(row).find('input[name^="medicines[' + index + '].product_id"]').val();
-                                        var quantity = $(row).find('input[name^="medicines[' + index + '].quantity"]').val();
-                                        var unit_price = $(row).find('input[name^="medicines[' + index + '].unit_price"]').val();
-                                        var amount = $(row).find('input[name^="medicines[' + index + '].amount"]').val();
-                                        var batch_no = $(row).find('input[name^="medicines[' + index + '].batch_no"]').val();
-                                        var production_date = $(row).find('input[name^="medicines[' + index + '].production_date"]').val();
-                                        var expiry_date = $(row).find('input[name^="medicines[' + index + '].expiry_date"]').val();
-                                        var remark = $(row).find('input[name^="medicines[' + index + '].remark"]').val();
+                                        var $row = $(row);
+                                        var $productSelect = $row.find('select[name$=".product_name"]');
+                                        var product_name = $row.find('input[name$=".product_name"]').val() || $productSelect.find('option:selected').data('name') || $productSelect.find('option:selected').text().split(' (')[0];
+                                        var product_id = $row.find('input[name$=".product_id"]').val();
+                                        var quantity = $row.find('input[name$=".quantity"]').val();
+                                        var unit_price = $row.find('input[name$=".unit_price"]').val();
+                                        var amount = $row.find('input[name$=".amount"]').val();
+                                        var batch_no = $row.find('input[name$=".batch_no"]').val();
+                                        var purchase_origin = $row.find('input[name$=".purchase_origin"]').val();
+                                        var supplier_name = $row.find('input[name$=".supplier_name"]').val();
+                                        var production_date = $row.find('input[name$=".production_date"]').val();
+                                        var expiry_date = $row.find('input[name$=".expiry_date"]').val();
+                                        var remark = $row.find('input[name$=".remark"]').val();
                                         // 将每行药品的明细推入数组
                                         items.push({
                                             product_name: product_name,
@@ -257,6 +270,8 @@
                                             unit_price: unit_price,
                                             amount: amount,
                                             batch_no:batch_no,
+                                            purchase_origin: purchase_origin,
+                                            supplier_name: supplier_name,
                                             production_date:production_date,
                                             expiry_date:expiry_date,
                                             remark:remark,

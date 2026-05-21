@@ -145,6 +145,7 @@ export default {
     return {
       timeString: null,
       myTime: null,
+      dataTimer: null,
     };
   },
   computed:{
@@ -255,6 +256,9 @@ export default {
   },
   created(){
     this.getBigScreen();
+    this.dataTimer = setInterval(() => {
+      this.getBigScreen();
+    }, 5000);
 
   },
   mounted() {
@@ -262,7 +266,9 @@ export default {
   },
   beforeDestroy() {
     clearInterval(this.myTime);
+    clearInterval(this.dataTimer);
     this.myTime = null;
+    this.dataTimer = null;
   },
   methods: {
     //启动计时器

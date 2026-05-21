@@ -40,12 +40,15 @@ type PrescriptionDTO struct {
 type PrescriptionDrug struct {
 	PrescriptionID         int     `db:"prescription_id" json:"prescription_id"`
 	HospitalID             string  `db:"hospital_id" json:"hospital_id"`
+	StockInItemID          int     `db:"stock_in_item_id" json:"stock_in_item_id"`
+	PurchaseOrigin         string  `db:"purchase_origin" json:"purchase_origin"`
+	BatchNo                string  `db:"batch_no" json:"batch_no"`
 	DrugProductNumber      string  `db:"drug_product_number" json:"drug_product_number"`
 	DrugProductName        string  `db:"drug_product_name" json:"drug_product_name"`
 	MeasurementUnit        string  `db:"measurement_unit" json:"measurement_unit"`
 	DrugProductDescription string  `db:"drug_product_description" json:"drug_product_description"`
 	Dose                   string  `db:"dose" json:"dose"`
-	DrugWeight             string  `db:"durg_weight" json:"drug_weight"` // Note: Fixed typo from `durg_weight` to `drug_weight`
+	DrugWeight             string  `db:"drug_weight" json:"drug_weight"`
 	DrugWeights            string  `db:"drug_weights" json:"drug_weights"`
 	DrugPrice              float32 `db:"drug_price" json:"drug_price"`
 	TotalPrices            float32 `db:"total_prices" json:"total_prices"`

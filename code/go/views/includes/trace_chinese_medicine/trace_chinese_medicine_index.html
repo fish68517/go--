@@ -59,6 +59,39 @@
             timeline += '</ul>';
 
             resultDiv.append(timeline);
+            if (response.data.medicines && response.data.medicines.length) {
+              var medicineTable = '<table class="layui-table"><thead><tr>' +
+                      '<th>药材</th><th>编码</th><th>源地</th><th>批次</th><th>数量</th><th>单价</th><th>小计</th>' +
+                      '</tr></thead><tbody>';
+              response.data.medicines.forEach(function(item) {
+                medicineTable += '<tr>' +
+                        '<td>' + (item.drug_product_name || '') + '</td>' +
+                        '<td>' + (item.drug_product_number || '') + '</td>' +
+                        '<td>' + (item.purchase_origin || '') + '</td>' +
+                        '<td>' + (item.batch_no || '') + '</td>' +
+                        '<td>' + (item.quantity || 0) + '</td>' +
+                        '<td>' + (item.unit_price || 0) + '</td>' +
+                        '<td>' + (item.total_price || 0) + '</td>' +
+                        '</tr>';
+              });
+              medicineTable += '</tbody></table>';
+              resultDiv.append('<h3>药材来源明细</h3>' + medicineTable);
+            }
+            if (response.data.payment || response.data.blockchain) {
+              var payment = response.data.payment || {};
+              var blockchain = response.data.blockchain || {};
+              var info = '<div class="layui-card"><div class="layui-card-header">支付与上链信息</div><div class="layui-card-body">';
+              info += '<p>支付状态：' + (payment.pay_status || '未记录') + '</p>';
+              info += '<p>应付金额：' + (payment.total_amount || 0) + ' 元</p>';
+              info += '<p>实付金额：' + (payment.pay_amount || 0) + ' 元</p>';
+              info += '<p>模拟交易号：' + (payment.mock_trade_no || '未记录') + '</p>';
+              info += '<p>支付时间：' + (payment.paid_at || '未记录') + '</p>';
+              info += '<p>上链状态：' + (blockchain.chain_status || '未上链') + '</p>';
+              info += '<p>交易ID：' + (blockchain.tx_id || '未记录') + '</p>';
+              info += '<p>Payload Hash：' + (blockchain.payload_hash || '未记录') + '</p>';
+              info += '</div></div>';
+              resultDiv.append(info);
+            }
           } else {
             layer.msg('查询失败: ' + response.message);
           }

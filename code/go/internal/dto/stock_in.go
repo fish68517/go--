@@ -26,6 +26,8 @@ type StockInItems struct {
 	UnitPrice      string `json:"unit_price" validate:"required,gt=0" comment:"单价"` // 大于0的正数
 	Amount         string `json:"amount" validate:"required,gt=0" comment:"金额"`     // 数量×单价，大于0
 	BatchNo        string `json:"batch_no" validate:"omitempty,max=30" comment:"批次号（可选）"`
+	PurchaseOrigin string `json:"purchase_origin" validate:"omitempty,max=100" comment:"进货源地"`
+	SupplierName    string `json:"supplier_name" validate:"omitempty,max=100" comment:"供应商名称"`
 	ProductionDate string `json:"production_date" validate:"omitempty" comment:"生产日期（可选）"`
 	ExpiryDate     string `json:"expiry_date" validate:"omitempty" comment:"过期日期（可选）"`
 	Remark         string `json:"remark" validate:"omitempty,max=200" comment:"备注（可选）"`

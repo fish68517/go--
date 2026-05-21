@@ -21,5 +21,34 @@ type PrescriptionFlowResponse struct {
 }
 
 type PrescriptionFlowData struct {
-	Process []PrescriptionFlow `json:"process"`
+	Process    []PrescriptionFlow `json:"process"`
+	Medicines  []TraceMedicineItem `json:"medicines"`
+	Payment    TracePayment        `json:"payment"`
+	Blockchain TraceBlockchain     `json:"blockchain"`
+}
+
+type TraceMedicineItem struct {
+	DrugProductNumber string  `json:"drug_product_number"`
+	DrugProductName   string  `json:"drug_product_name"`
+	PurchaseOrigin    string  `json:"purchase_origin"`
+	BatchNo           string  `json:"batch_no"`
+	Quantity          float64 `json:"quantity"`
+	UnitPrice         float64 `json:"unit_price"`
+	TotalPrice        float64 `json:"total_price"`
+}
+
+type TracePayment struct {
+	PayStatus   string  `json:"pay_status"`
+	TotalAmount float64 `json:"total_amount"`
+	PayAmount   float64 `json:"pay_amount"`
+	PayMethod   string  `json:"pay_method"`
+	MockTradeNo string  `json:"mock_trade_no"`
+	PaidAt      string  `json:"paid_at"`
+}
+
+type TraceBlockchain struct {
+	ChainStatus string `json:"chain_status"`
+	TxID        string `json:"tx_id"`
+	PayloadHash string `json:"payload_hash"`
+	Error       string `json:"error"`
 }

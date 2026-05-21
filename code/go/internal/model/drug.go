@@ -6,18 +6,21 @@ import (
 )
 
 type PrescriptionDrug struct {
-	ID                     int     `db:"id" json:"id"`
-	PrescriptionID         int     `db:"prescription_id" json:"prescription_id"`
-	HospitalID             string  `db:"hospital_id" json:"hospital_id"`
-	DrugProductNumber      string  `db:"drug_product_number" json:"drug_product_number"`
-	DrugProductName        string  `db:"drug_product_name" json:"drug_product_name"`
-	MeasurementUnit        string  `db:"measurement_unit" json:"measurement_unit"`
-	DrugProductDescription string  `db:"drug_product_description" json:"drug_product_description"`
-	Dose                   int     `db:"dose" json:"dose"`
-	DrugWeight             float64 `db:"durg_weight" json:"drug_weight"` // Note: Fixed typo from `durg_weight` to `drug_weight`
-	DrugWeights            float64 `db:"drug_weights" json:"drug_weights"`
-	DrugPrice              float64 `db:"drug_price" json:"drug_price"`
-	TotalPrices            float64 `db:"total_prices" json:"total_prices"`
+	ID                     int     `gorm:"primaryKey;column:id" json:"id"`
+	PrescriptionID         int     `gorm:"column:prescription_id" json:"prescription_id"`
+	HospitalID             string  `gorm:"column:hospital_id" json:"hospital_id"`
+	StockInItemID          int     `gorm:"column:stock_in_item_id" json:"stock_in_item_id"`
+	PurchaseOrigin         string  `gorm:"column:purchase_origin" json:"purchase_origin"`
+	BatchNo                string  `gorm:"column:batch_no" json:"batch_no"`
+	DrugProductNumber      string  `gorm:"column:drug_product_number" json:"drug_product_number"`
+	DrugProductName        string  `gorm:"column:drug_product_name" json:"drug_product_name"`
+	MeasurementUnit        string  `gorm:"column:measurement_unit" json:"measurement_unit"`
+	DrugProductDescription string  `gorm:"column:drug_product_description" json:"drug_product_description"`
+	Dose                   int     `gorm:"column:dose" json:"dose"`
+	DrugWeight             float64 `gorm:"column:drug_weight" json:"drug_weight"`
+	DrugWeights            float64 `gorm:"column:drug_weights" json:"drug_weights"`
+	DrugPrice              float64 `gorm:"column:drug_price" json:"drug_price"`
+	TotalPrices            float64 `gorm:"column:total_prices" json:"total_prices"`
 }
 type QrCode struct {
 	QrCode string

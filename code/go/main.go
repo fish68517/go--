@@ -158,6 +158,10 @@ func setupDBEngine() error {
 		return err
 	}
 
+	if err = model.EnsureTraceSchema(global.DBEngine); err != nil {
+		return err
+	}
+
 	return nil
 }
 

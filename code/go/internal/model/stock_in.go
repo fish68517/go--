@@ -28,10 +28,12 @@ type StockInItem struct {
 	UnitPrice      string     `gorm:"column:unit_price;type:decimal(12,2);not null;comment:单价" json:"unit_price"`
 	Amount         string     `gorm:"type:decimal(12,2);not null;comment:金额（quantity×unit_price）" json:"amount"`
 	BatchNo        string     `gorm:"column:batch_no;type:varchar(30);comment:批次号（可选）" json:"batch_no"`
+	PurchaseOrigin string     `gorm:"column:purchase_origin;type:varchar(100);comment:进货源地" json:"purchase_origin"`
+	SupplierName    string     `gorm:"column:supplier_name;type:varchar(100);comment:供应商名称" json:"supplier_name"`
 	ProductionDate *time.Time `gorm:"column:production_date;type:date;comment:生产日期（可选）" json:"production_date"`
 	ExpiryDate     *time.Time `gorm:"column:expiry_date;type:date;comment:过期日期（可选）" json:"expiry_date"`
 	Remark         string     `gorm:"type:varchar(200);comment:备注（可选）" json:"remark"`
-	ProductName    string     `gorm:"column:product_id;not null;index:idx_product;comment:产品ID（关联产品表）" json:"product_id"`
+	ProductName    string     `gorm:"column:product_name;comment:产品名称" json:"product_name"`
 }
 
 // TableName 设置表名

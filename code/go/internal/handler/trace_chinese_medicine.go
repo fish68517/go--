@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -46,99 +47,72 @@ func (c *trace_chinese_medicineHandler) Flow(ctx *gin.Context) {
 		})
 		return
 	}
-	layout := "2006-01-02 15:04:05"
-	parsedoTime, err := time.Parse(layout, record.DoTime)
-	if err != nil {
+	if record == nil || record.Id == 0 {
 		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态接方",
-			Code: 7891,
+			Msg:  "未查询到处方",
+			Code: 7890,
 			Data: nil,
 		})
 		return
 	}
-	parsePresAduitTime, err := time.Parse(layout, record.PresAduitTime)
-	if err != nil {
-		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态审核",
-			Code: 7891,
-			Data: nil,
-		})
-		return
-	}
-	parseAdjustmentTime, err := time.Parse(layout, record.AdjustmentTime)
-	if err != nil {
-		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态调剂",
-			Code: 7891,
-			Data: nil,
-		})
-		return
-	}
-	parseAuditDatetime, err := time.Parse(layout, record.AuditDatetime)
-	if err != nil {
-		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态复核",
-			Code: 7891,
-			Data: nil,
-		})
-		return
-	}
-	parseSoakStartTime, err := time.Parse(layout, record.SoakStartTime)
-	if err != nil {
-		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态泡药",
-			Code: 7891,
-			Data: nil,
-		})
-		return
-	}
-	parseDecoctionStartTime, err := time.Parse(layout, record.DecoctionStartTime)
-	if err != nil {
-		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态煎药",
-			Code: 7891,
-			Data: nil,
-		})
-		return
-	}
-	parsePackStartTime, err := time.Parse(layout, record.PackStartTime)
-	if err != nil {
-		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态包装",
-			Code: 7891,
-			Data: nil,
-		})
-		return
-	}
-	parseDeliveryTime, err := time.Parse(layout, record.DeliveryTime)
-	if err != nil {
-		response.ToResponse(dto.SuccessResponse{
-			Msg:  "查询失败,处方状态未发货",
-			Code: 7891,
-			Data: nil,
-		})
-		return
-	}
+	process := make([]dto.PrescriptionFlow, 0, 8)
+	appendFlowStep(&process, record.PrescriptionNumber, "接方", record.DoPerson, record.DoTime)
+	appendFlowStep(&process, record.PrescriptionNumber, "审核", record.PresAduitReviewer, record.PresAduitTime)
+	appendFlowStep(&process, record.PrescriptionNumber, "调剂", record.AdjustmentReviewer, record.AdjustmentTime)
+	appendFlowStep(&process, record.PrescriptionNumber, "复核", record.AuditReviewer, record.AuditDatetime)
+	appendFlowStep(&process, record.PrescriptionNumber, "泡药", record.SoakingPerson, record.SoakStartTime)
+	appendFlowStep(&process, record.PrescriptionNumber, "煎药", record.DecoctionPerson, record.DecoctionStartTime)
+	appendFlowStep(&process, record.PrescriptionNumber, "包装", record.PackingPersonnel, record.PackStartTime)
+	appendFlowStep(&process, record.PrescriptionNumber, "发货", record.DeliveryPersonnel, record.DeliveryTime)
+	medicines, _ := svc.BuildTraceMedicineItems(svc.GetCtx(), record.Id)
+	payment, _ := svc.BuildTracePayment(svc.GetCtx(), record.Id)
+	blockchain, _ := svc.BuildTraceBlockchain(svc.GetCtx(), record.Id)
 
 	mockData := dto.PrescriptionFlowResponse{
 		Code:    0,
 		Message: "success",
 		Data: dto.PrescriptionFlowData{
-			Process: []dto.PrescriptionFlow{
-				{Step: "接方", Performer: record.DoPerson, Timestamp: parsedoTime},
-				{Step: "审核", Performer: record.PresAduitReviewer, Timestamp: parsePresAduitTime},
-				{Step: "调剂", Performer: record.PresAduitReviewer, Timestamp: parseAdjustmentTime},
-				{Step: "复核", Performer: record.AuditReviewer, Timestamp: parseAuditDatetime},
-				{Step: "泡药", Performer: record.SoakingPerson, Timestamp: parseSoakStartTime},
-				{Step: "煎药", Performer: record.DecoctionPerson, Timestamp: parseDecoctionStartTime},
-				{Step: "包装", Performer: record.PackingPersonnel, Timestamp: parsePackStartTime},
-				{Step: "发货", Performer: record.DeliveryPersonnel, Timestamp: parseDeliveryTime},
-			},
+			Process:    process,
+			Medicines:  medicines,
+			Payment:    payment,
+			Blockchain: blockchain,
 		},
 	}
 	ctx.JSON(http.StatusOK, mockData)
 	return
 
+}
+
+func appendFlowStep(process *[]dto.PrescriptionFlow, rxNumber, step, performer, timestamp string) {
+	parsedTime, err := parseFlowTime(timestamp)
+	if err != nil {
+		return
+	}
+	*process = append(*process, dto.PrescriptionFlow{
+		RxNumber:  rxNumber,
+		Step:      step,
+		Performer: performer,
+		Timestamp: parsedTime,
+	})
+}
+
+func parseFlowTime(value string) (time.Time, error) {
+	value = strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
+	layouts := []string{
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04",
+		"2006-1-2 15:04:05",
+		"2006-1-2 15:04",
+		"2006-01-02",
+		"2006-1-2",
+	}
+	for _, layout := range layouts {
+		parsed, err := time.ParseInLocation(layout, value, time.Local)
+		if err == nil {
+			return parsed, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("invalid time: %s", value)
 }
 
 //从区块链上查询数据

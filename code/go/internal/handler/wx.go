@@ -2,18 +2,20 @@ package handler
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mwqnice/oh-admin/global"
 	"github.com/mwqnice/oh-admin/internal/dto"
+	"github.com/mwqnice/oh-admin/internal/model"
 	"github.com/mwqnice/oh-admin/internal/service"
 	"github.com/mwqnice/oh-admin/pkg/app"
 	"github.com/mwqnice/oh-admin/pkg/convert"
@@ -102,6 +104,15 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 	}
 	svc := service.New(ctx.Request.Context())
 	prescriptionView, _ := svc.GetPrescriptionView(svc.GetCtx(), &dto.PrescriptionRequest{Id: convert.Int(id)})
+	if prescriptionView == nil || prescriptionView.Id == 0 {
+		response.ToResponse(dto.SuccessResponse{
+			Msg:  "处方不存在",
+			Code: 87891,
+		})
+		return
+	}
+	medicines, _ := svc.BuildTraceMedicineItems(svc.GetCtx(), prescriptionView.Id)
+	payment, _ := svc.BuildTracePayment(svc.GetCtx(), prescriptionView.Id)
 	fmt.Print("prescriptionView=", prescriptionView)
 	tisaneRecord := &dto.TisaneRecord{
 		HospitalName:       prescriptionView.HospitalName,
@@ -127,6 +138,8 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 		DeliveryPersonnel:  prescriptionView.DeliveryPersonnel,
 		DeliveryTime:       prescriptionView.DeliveryTime,
 		LogisticsNumber:    prescriptionView.LogisticsNumber,
+		Medicines:          medicines,
+		Payment:            payment,
 	}
 	// 声明一个 TisaneRecord 类型的切片（数组）
 	var tisaneRecords []*dto.TisaneRecord
@@ -141,11 +154,27 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 	// 将 tisaneRecord 添加到切片中
 	tisaneRecords = append(tisaneRecords, tisaneRecord)
 	tisaneRecordJson, _ := json.Marshal(tisaneRecords)
+	hashBytes := sha256.Sum256(tisaneRecordJson)
+	payloadHash := hex.EncodeToString(hashBytes[:])
+	chainLog := &model.BlockchainTraceLog{
+		PrescriptionID:     prescriptionView.Id,
+		PrescriptionNumber: prescriptionView.PrescriptionNumber,
+		PayloadHash:        payloadHash,
+		ChainStatus:        "PENDING",
+	}
+	_ = svc.SaveBlockchainTraceLog(svc.GetCtx(), chainLog)
 	fmt.Println("json串：--", string(tisaneRecordJson))
 	url := global.AppSetting.UpChain
 	respBody, err := PostJSON(url, tisaneRecordJson)
 	if err != nil {
 		fmt.Printf("错误: %v\n", err)
+		chainLog.ChainStatus = "FAILED"
+		chainLog.ErrorMessage = err.Error()
+		_ = svc.SaveBlockchainTraceLog(svc.GetCtx(), chainLog)
+		response.ToResponse(dto.SuccessResponse{
+			Msg:  "上链失败=" + err.Error(),
+			Code: 87892,
+		})
 		return
 	}
 	var rp dto.SuccessResponse
@@ -153,19 +182,35 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 	// 将 JSON 数据解析到结构体中
 	err = json.Unmarshal(respBody, &rp)
 	if err != nil {
-		log.Fatalf("解析 JSON 数据失败: %v", err)
+		chainLog.ChainStatus = "FAILED"
+		chainLog.ErrorMessage = err.Error()
+		_ = svc.SaveBlockchainTraceLog(svc.GetCtx(), chainLog)
+		log.Printf("解析 JSON 数据失败: %v", err)
+		response.ToResponse(dto.SuccessResponse{
+			Msg:  "上链响应解析失败=" + err.Error(),
+			Code: 87893,
+		})
+		return
 	}
 	// 判断 Code 是否等于 201
 	if rp.Code == http.StatusOK {
+		txID := fmt.Sprint(rp.Data)
+		chainLog.ChainStatus = "SUCCESS"
+		chainLog.TxID = txID
+		_ = svc.SaveBlockchainTraceLog(svc.GetCtx(), chainLog)
 		//更新处方状态
 		response.ToResponse(dto.SuccessResponse{
-			Msg:  "上链成功,交易ID=" + reflect.ValueOf(rp.Data).String(),
+			Msg:  "上链成功,交易ID=" + txID,
 			Code: 0,
 		})
 		return
 	} else {
+		errorMessage := fmt.Sprint(rp.Data)
+		chainLog.ChainStatus = "FAILED"
+		chainLog.ErrorMessage = errorMessage
+		_ = svc.SaveBlockchainTraceLog(svc.GetCtx(), chainLog)
 		response.ToResponse(dto.SuccessResponse{
-			Msg:  "上链失败=" + reflect.ValueOf(rp.Data).String(),
+			Msg:  "上链失败=" + errorMessage,
 			Code: rp.Code,
 			Data: rp.Data,
 		})
@@ -178,17 +223,12 @@ func ValidateTimes(t *dto.TisaneRecord) error {
 		Name  string
 		Value string
 	}{
+		{"PrescriptionNumber", t.PrescriptionNumber},
 		{"DoTime", t.DoTime},
-		{"PresAduitTime", t.PresAduitTime},
-		{"AdjustmentTime", t.AdjustmentTime},
-		{"SoakStartTime", t.SoakStartTime},
-		{"DecoctionStartTime", t.DecoctionStartTime},
-		{"PackStartTime", t.PackStartTime},
-		{"DeliveryTime", t.DeliveryTime},
 	}
 
 	for _, field := range timeFields {
-		if field.Value == "" {
+		if strings.TrimSpace(field.Value) == "" {
 			return errors.New(fmt.Sprintf("Error: %s is empty", field.Name))
 		}
 		// Optionally, you can also validate if the time string is in a correct format

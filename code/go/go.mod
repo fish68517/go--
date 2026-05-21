@@ -1,6 +1,6 @@
 module github.com/mwqnice/oh-admin
 
-go 1.24
+go 1.26.1
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

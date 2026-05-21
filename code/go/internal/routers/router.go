@@ -152,6 +152,9 @@ func NewRouter() *gin.Engine {
 	{
 		prescription.GET("/index", handler.PrescriptionHandler.Index)        //处方首页
 		prescription.POST("/list", handler.PrescriptionHandler.List)         //接方列表
+		prescription.GET("/drug_sources", handler.PrescriptionHandler.DrugSources)
+		prescription.GET("/payment/detail", handler.PrescriptionHandler.PaymentDetail)
+		prescription.POST("/payment/mock_pay", handler.PrescriptionHandler.MockPay)
 		prescription.Any("/add", handler.PrescriptionHandler.Add)            //添加处方
 		prescription.Any("/edit", handler.PrescriptionHandler.Edit)          //修改处方
 		prescription.Any("/detail", handler.PrescriptionHandler.Detail)      //处方明细

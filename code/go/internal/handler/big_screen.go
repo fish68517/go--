@@ -28,6 +28,9 @@ func (c *bigScreenHandler) BigScreenData(ctx *gin.Context) {
 	getPrescriptionCountByDeliveryDateList, _ := svc.GetPrescriptionCountByDeliveryDateList(ctx)
 	getPrescriptionCountByDateDateList, _ := svc.GetPrescriptionCountByDateDateList(ctx)
 	getPrescriptionCountByHospital, _ := svc.GetPrescriptionCountByHospital(ctx)
+	if getPrescriptionSummaryList == nil {
+		getPrescriptionSummaryList = &model.PrescriptionSummary{}
+	}
 	response := Response{
 		Success:   true,
 		Message:   "",
@@ -45,7 +48,7 @@ func (c *bigScreenHandler) BigScreenData(ctx *gin.Context) {
 					ProduceTotal:  getPrescriptionSummaryList.PrescriptionTotal,     //今日接方数量
 					Name:          "大屏总览数据",
 					MaterialSale:  getPrescriptionSummaryList.PrescriptionFinishTotal, //复核数量
-					ShowDate:      "2025-02-10 00:00:00",
+					ShowDate:      time.Now().Format("2006-01-02 15:04:05"),
 					UseTotal:      getPrescriptionSummaryList.PrescriptionFinishTotal, //今日已完成数量
 					DetonatorSale: getPrescriptionSummaryList.PrescriptionAduitTotal,  //审方数量
 				},

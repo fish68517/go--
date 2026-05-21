@@ -191,20 +191,30 @@ func (c *prescriptionHandler) Detail(ctx *gin.Context) {
 	id := ctx.Query("id")
 
 	info, _ := svc.GetPrescriptionInfo(svc.GetCtx(), convert.Int(id))
+	if info == nil {
+		response.ToErrorResponse(errcode.InvalidParams)
+		return
+	}
 	drugs, _ := svc.GetPrescriptionDrugInfo(svc.GetCtx(), convert.Int(info.ID))
 	qrlist, _ := svc.GetQrcodeVwInfo(svc.GetCtx(), convert.Int(info.ID))
+	payment, _ := svc.GetPrescriptionPaymentDetail(svc.GetCtx(), convert.Int(info.ID))
 	drug := preprocessMedicines(drugs)
 	qcode := preprocessQr(qrlist)
 	// 渲染模板
 	response.BuildTpl(ctx, "prescription_detail.html").WriteTpl(gin.H{
 		"info":      info,
 		"medicines": drug,
+		"drugItems": drugs,
+		"payment":   payment,
 		"qr":        qcode,
 	})
 
 }
 func preprocessQr(qrlist *model.QrcodeVw) model.QrCode {
 	var qrcode model.QrCode
+	if qrlist == nil {
+		return qrcode
+	}
 	qrcode.QrCode = qrlist.PackNum + qrlist.DeScheme + qrlist.PackAcount + qrlist.BNum
 	fmt.Println(qrcode.QrCode)
 	return qrcode
@@ -244,4 +254,59 @@ func (c *prescriptionHandler) Delete(ctx *gin.Context) {
 		Msg: "删除成功",
 	})
 	return
+}
+
+func (c *prescriptionHandler) DrugSources(ctx *gin.Context) {
+	response := app.NewResponse(ctx)
+	svc := service.New(ctx.Request.Context())
+	list, err := svc.GetDrugSources(svc.GetCtx(), ctx.Query("product_id"), ctx.Query("product_name"))
+	if err != nil {
+		response.ToErrorResponse(errcode.Fail.WithDetails(err.Error()))
+		return
+	}
+	response.ToResponse(dto.SuccessResponse{
+		Code: 0,
+		Msg:  "success",
+		Data: list,
+	})
+}
+
+func (c *prescriptionHandler) PaymentDetail(ctx *gin.Context) {
+	response := app.NewResponse(ctx)
+	id := convert.Int(ctx.Query("id"))
+	if id == 0 {
+		response.ToErrorResponse(errcode.InvalidParams)
+		return
+	}
+	svc := service.New(ctx.Request.Context())
+	detail, err := svc.GetPrescriptionPaymentDetail(svc.GetCtx(), id)
+	if err != nil {
+		response.ToErrorResponse(errcode.Fail.WithDetails(err.Error()))
+		return
+	}
+	response.ToResponse(dto.SuccessResponse{
+		Code: 0,
+		Msg:  "success",
+		Data: detail,
+	})
+}
+
+func (c *prescriptionHandler) MockPay(ctx *gin.Context) {
+	response := app.NewResponse(ctx)
+	params := &dto.MockPayRequest{}
+	if err := ctx.ShouldBindJSON(params); err != nil || params.PrescriptionID == 0 {
+		response.ToErrorResponse(errcode.InvalidParams)
+		return
+	}
+	svc := service.New(ctx.Request.Context())
+	detail, err := svc.MockPayPrescription(svc.GetCtx(), params)
+	if err != nil {
+		response.ToErrorResponse(errcode.Fail.WithDetails(err.Error()))
+		return
+	}
+	response.ToResponse(dto.SuccessResponse{
+		Code: 0,
+		Msg:  "支付成功",
+		Data: detail,
+	})
 }

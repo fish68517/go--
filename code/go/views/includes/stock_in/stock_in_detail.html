@@ -12,10 +12,13 @@
                     <tr>
                         <th>序号</th>
                         <th>药品ID</th>
+                        <th>药品名称</th>
                         <th>入库数量</th>
                         <th>单价</th>
                         <th>金额</th>
                         <th>批次号</th>
+                        <th>进货源地</th>
+                        <th>供应商</th>
                         <th>生产日期</th>
                         <th>过期日期</th>
                         <th>备注</th>
@@ -27,17 +30,20 @@
                     <tr>
                         <td>{{.Id}}</td>
                         <td>{{.ProductId}}</td>
+                        <td>{{.ProductName}}</td>
                         <td>{{.Quantity}}</td>
                         <td>{{.UnitPrice}}</td>
                         <td>{{.Amount}}</td>
                         <td>{{.BatchNo}}</td>
+                        <td>{{.PurchaseOrigin}}</td>
+                        <td>{{.SupplierName}}</td>
                         <td>{{.ProductionDate}}</td>
-                        <td>{{.ProductID}}</td>
-                        <td>{{.Quantity}}</td>
+                        <td>{{.ExpiryDate}}</td>
+                        <td>{{.Remark}}</td>
                     </tr>
                     {{else}}
                     <tr>
-                        <td colspan="9" class="layui-center">暂无出库数据</td>
+                        <td colspan="12" class="layui-center">暂无入库数据</td>
                     </tr>
                     {{end}}
                     </tbody>

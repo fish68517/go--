@@ -37,6 +37,10 @@ type PrescriptionDetail struct {
 	Dosage             float64 `json:"dosage"` // 假设剂量为浮点数，根据实际情况调整类型
 	CurrentState       string  `json:"current_state"`
 	DrugCount          int     `json:"drug_count"`
+	PayStatus          string  `json:"pay_status"`
+	PayAmount          float64 `json:"pay_amount"`
+	ChainStatus        string  `json:"chain_status"`
+	TxID               string  `json:"tx_id"`
 }
 type DrugTotalQuantity struct {
 	DrugProductName string  `json:"drug_product_name"`

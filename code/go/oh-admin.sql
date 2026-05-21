@@ -790,6 +790,9 @@ CREATE TABLE `prescription_drug` (
   `id` int NOT NULL AUTO_INCREMENT,
   `prescription_id` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `hospital_id` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `stock_in_item_id` int DEFAULT NULL COMMENT '关联入库明细ID',
+  `purchase_origin` varchar(100) DEFAULT NULL COMMENT '进货源地',
+  `batch_no` varchar(50) DEFAULT NULL COMMENT '入库批次号',
   `drug_product_number` varchar(60) DEFAULT NULL,
   `drug_product_name` varchar(60) DEFAULT NULL,
   `measurement_unit` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
@@ -1063,6 +1066,8 @@ CREATE TABLE `stock_in_items` (
   `unit_price` decimal(12,2) NOT NULL,
   `amount` decimal(12,2) NOT NULL,
   `batch_no` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '批次号',
+  `purchase_origin` varchar(100) DEFAULT NULL COMMENT '进货源地',
+  `supplier_name` varchar(100) DEFAULT NULL COMMENT '供应商名称',
   `production_date` datetime DEFAULT NULL COMMENT '生产日期',
   `expiry_date` datetime DEFAULT NULL COMMENT '过期日期',
   `remark` varchar(200) DEFAULT NULL,
@@ -1352,6 +1357,45 @@ BEGIN;
 COMMIT;
 
 -- ----------------------------
+-- Table structure for prescription_payment
+-- ----------------------------
+DROP TABLE IF EXISTS `prescription_payment`;
+CREATE TABLE `prescription_payment` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `prescription_id` int NOT NULL COMMENT '处方ID',
+  `prescription_number` varchar(60) NOT NULL COMMENT '处方号',
+  `total_amount` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '应付总金额',
+  `pay_amount` decimal(12,2) NOT NULL DEFAULT 0.00 COMMENT '实付金额',
+  `pay_method` varchar(30) DEFAULT NULL COMMENT '模拟支付方式',
+  `pay_status` varchar(20) NOT NULL DEFAULT 'UNPAID' COMMENT '支付状态：UNPAID/PAID/CANCELLED',
+  `mock_trade_no` varchar(64) DEFAULT NULL COMMENT '模拟交易号',
+  `paid_at` datetime DEFAULT NULL COMMENT '支付时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_prescription_payment` (`prescription_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='处方模拟支付记录';
+
+-- ----------------------------
+-- Table structure for blockchain_trace_log
+-- ----------------------------
+DROP TABLE IF EXISTS `blockchain_trace_log`;
+CREATE TABLE `blockchain_trace_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `prescription_id` int NOT NULL COMMENT '处方ID',
+  `prescription_number` varchar(60) NOT NULL COMMENT '处方号',
+  `payload_hash` varchar(64) NOT NULL COMMENT '上链内容SHA256',
+  `tx_id` varchar(128) DEFAULT NULL COMMENT '链上交易ID',
+  `chain_status` varchar(20) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/SUCCESS/FAILED',
+  `error_message` varchar(500) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_prescription_number` (`prescription_number`),
+  KEY `idx_prescription_id` (`prescription_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='处方溯源上链日志';
+
+-- ----------------------------
 -- View structure for adjustment_view
 -- ----------------------------
 DROP VIEW IF EXISTS `adjustment_view`;
@@ -1439,7 +1483,7 @@ CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `prescription_is_decoctio
 -- View structure for prescription_list_screen
 -- ----------------------------
 DROP VIEW IF EXISTS `prescription_list_screen`;
-CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `prescription_list_screen` AS select `prescription`.`hospital_name` AS `hospital_name`,(case when (`prescription`.`Is_decoction` = 1) then '代煎' else '自煎' end) AS `decoction_type`,`prescription`.`prescription_number` AS `prescription_number`,`prescription`.`patient_name` AS `patient_name`,`prescription`.`dosage` AS `dosage`,`prescription`.`current_state` AS `current_state`,`prescription`.`drug_count` AS `drug_count` from `prescription` where (cast(`prescription`.`do_time` as date) = curdate());
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `prescription_list_screen` AS select `p`.`hospital_name` AS `hospital_name`,(case when (`p`.`Is_decoction` = 1) then '代煎' else '自煎' end) AS `decoction_type`,`p`.`prescription_number` AS `prescription_number`,`p`.`patient_name` AS `patient_name`,`p`.`dosage` AS `dosage`,`p`.`current_state` AS `current_state`,`p`.`drug_count` AS `drug_count`,coalesce(`pay`.`pay_status`,'UNPAID') AS `pay_status`,coalesce(`pay`.`pay_amount`,0) AS `pay_amount`,coalesce(`chain`.`chain_status`,'') AS `chain_status`,coalesce(`chain`.`tx_id`,'') AS `tx_id` from ((`prescription` `p` left join `prescription_payment` `pay` on((`pay`.`prescription_id` = `p`.`ID`))) left join (select `b1`.* from (`blockchain_trace_log` `b1` join (select `blockchain_trace_log`.`prescription_id` AS `prescription_id`,max(`blockchain_trace_log`.`id`) AS `id` from `blockchain_trace_log` group by `blockchain_trace_log`.`prescription_id`) `latest` on((`latest`.`id` = `b1`.`id`)))) `chain` on((`chain`.`prescription_id` = `p`.`ID`))) where (cast(`p`.`do_time` as date) = curdate());
 
 -- ----------------------------
 -- View structure for prescription_total_screen

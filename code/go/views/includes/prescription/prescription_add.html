@@ -328,9 +328,13 @@
         <tr>
           <th>药品名称</th>
           <th>药品编码</th>
+          <th>进货源地</th>
+          <th>入库批次</th>
           <th>单剂量</th>
           <th>贴数</th>
           <th>总剂量</th>
+          <th>单价</th>
+          <th>小计</th>
           <th>脚注</th>
           <th>操作</th>
         </tr>
@@ -338,6 +342,7 @@
         <tbody id="medicinesTable">
         </tbody>
       </table>
+      <div style="text-align:right;padding:8px 0;font-weight:bold;">药材合计：<span id="medicineTotalAmount">0.00</span> 元</div>
       <button type="button" class="layui-btn" id="addRow">新增药品</button>
     </div>
 
@@ -347,36 +352,100 @@
 
 
 <script>
+layui.use(['form'], function(){
+  var form = layui.form;
+
+  $('#addRow').on('click', function(){
+    var index = $('#medicinesTable tr').length;
+    var newRow = '<tr>' +
+            '<td><input type="text" name="medicines[' + index + '].drug_name" required lay-verify="required" class="layui-input drugNameInput"></td>' +
+            '<td><input type="text" name="medicines[' + index + '].drug_code" required lay-verify="required" class="layui-input drugCodeInput"></td>' +
+            '<td><select name="medicines[' + index + '].stock_in_item_id" class="sourceSelect" lay-filter="sourceSelect"><option value="">先输入编码</option></select><input type="hidden" name="medicines[' + index + '].purchase_origin" class="purchaseOriginInput"></td>' +
+            '<td><input type="text" name="medicines[' + index + '].batch_no" class="layui-input batchNoInput" readonly></td>' +
+            '<td><input type="number" name="medicines[' + index + '].drug_weight" required lay-verify="required|number" class="layui-input drugWeightInput" min="0" step="0.01"></td>' +
+            '<td><input type="number" name="medicines[' + index + '].dose" required lay-verify="required|number" class="layui-input doseInput" min="1"></td>' +
+            '<td><input type="number" name="medicines[' + index + '].drug_weights" required lay-verify="required|number" class="layui-input drugWeightsInput" readonly></td>' +
+            '<td><input type="number" name="medicines[' + index + '].drug_price" class="layui-input unitPriceInput" min="0" step="0.01"></td>' +
+            '<td><input type="number" name="medicines[' + index + '].total_prices" class="layui-input amountInput" readonly></td>' +
+            '<td><input type="text" name="medicines[' + index + '].remark" class="layui-input"></td>' +
+            '<td><button type="button" class="layui-btn layui-btn-danger deleteRow">删除</button></td>' +
+            '</tr>';
+    $('#medicinesTable').append(newRow);
+    form.render('select');
+  });
+
+  $(document).on('blur', '.drugCodeInput, .drugNameInput', function(){
+    loadDrugSources($(this).closest('tr'));
+  });
+
+  form.on('select(sourceSelect)', function(data){
+    fillSource($(data.elem).closest('tr'));
+  });
+
+  $(document).on('input', '.drugWeightInput, .doseInput, .unitPriceInput', function(){
+    recalcRow($(this).closest('tr'));
+  });
+
   $(document).on('click', '.deleteRow', function(){
     $(this).closest('tr').remove();
+    updateTotalAmount();
   });
 
-$('#addRow').on('click', function(){
-  var index = $('#medicinesTable tr').length;
-  var newRow = '<tr>' +
-          '<td><input type="text" name="medicines[' + index + '].drug_name" required lay-verify="required" class="layui-input"></td>' +
-          '<td><input type="text" name="medicines[' + index + '].drug_code" required lay-verify="required" class="layui-input"></td>' +
-          '<td><input type="text" name="medicines[' + index + '].drug_weight" required lay-verify="required" class="layui-input priceInput"></td>' +
-          '<td><input type="number" name="medicines[' + index + '].dose" required lay-verify="required|number" class="layui-input quantityInput"></td>' +
-          '<td><input type="number" name="medicines[' + index + '].drug_weights" required lay-verify="required|number" class="layui-input totalPriceInput"></td>' +
-          '<td><input type="text" name="medicines[' + index + '].remark"  class="layui-input "></td>' +
-          '<td><button type="button" class="layui-btn layui-btn-danger deleteRow">删除</button></td>' +
-          '</tr>';
-  $('#medicinesTable').append(newRow);
+  function loadDrugSources($row) {
+    var productId = $row.find('.drugCodeInput').val();
+    var productName = $row.find('.drugNameInput').val();
+    if (!productId && !productName) {
+      return;
+    }
+    $.get('/prescription/drug_sources', {
+      product_id: productId,
+      product_name: productName
+    }, function(res){
+      var list = (res && res.data) ? res.data : [];
+      var $select = $row.find('.sourceSelect');
+      $select.empty();
+      if (list.length === 0) {
+        $select.append('<option value="">暂无入库批次</option>');
+      } else {
+        $select.append('<option value="">请选择源地批次</option>');
+        list.forEach(function(item){
+          var label = (item.purchase_origin || '未填源地') + ' / ' + (item.batch_no || '无批次') + ' / ' + (item.unit_price || '0') + '元';
+          $select.append('<option value="' + item.stock_in_item_id + '" data-origin="' + (item.purchase_origin || '') + '" data-batch="' + (item.batch_no || '') + '" data-price="' + (item.unit_price || 0) + '">' + label + '</option>');
+        });
+      }
+      form.render('select');
+    });
+  }
 
-  // 计算总价
-  $('.priceInput, .quantityInput').on('input', function(){
-    var price = $(this).closest('tr').find('.priceInput').val();
-    var quantity = $(this).closest('tr').find('.quantityInput').val();
-    var totalPrice = (price * quantity) || 0;
-    $(this).closest('tr').find('.totalPriceInput').val(totalPrice.toFixed(2));
-  });
+  function fillSource($row) {
+    var $option = $row.find('.sourceSelect option:selected');
+    $row.find('.purchaseOriginInput').val($option.data('origin') || '');
+    $row.find('.batchNoInput').val($option.data('batch') || '');
+    if ($option.data('price') !== undefined && $option.data('price') !== '') {
+      $row.find('.unitPriceInput').val($option.data('price'));
+    }
+    recalcRow($row);
+  }
+
+  function recalcRow($row) {
+    var drugWeight = parseFloat($row.find('.drugWeightInput').val()) || 0;
+    var dose = parseFloat($row.find('.doseInput').val()) || 0;
+    var unitPrice = parseFloat($row.find('.unitPriceInput').val()) || 0;
+    var totalWeight = drugWeight * dose;
+    var amount = totalWeight * unitPrice;
+    $row.find('.drugWeightsInput').val(totalWeight.toFixed(2));
+    $row.find('.amountInput').val(amount.toFixed(2));
+    updateTotalAmount();
+  }
+
+  function updateTotalAmount() {
+    var total = 0;
+    $('#medicinesTable .amountInput').each(function(){
+      total += parseFloat($(this).val()) || 0;
+    });
+    $('#medicineTotalAmount').text(total.toFixed(2));
+  }
 });
-  // 删除药品行
-  $(document).on('click', '.deleteRow', function(){
-    $(this).closest('tr').remove();
-  });
-
 
 </script>
 {{end}}
