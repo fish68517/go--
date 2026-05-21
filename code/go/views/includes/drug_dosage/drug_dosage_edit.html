@@ -1,0 +1,63 @@
+{{define "form"}}
+<form class="layui-form model-form" action="">
+    <input name="id" id="id" type="hidden" value="{{.info.ID}}">
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">药品ID：</label>
+        <div class="layui-input-block">
+            <input name="drug_id" disabled value="{{.info.DrugID}}" lay-verify="required" autocomplete="off"
+                   placeholder="请输入药品唯一标识" class="layui-input" type="text">
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">最大剂量：</label>
+        <div class="layui-input-block">
+            <input name="max_dosage" value="{{.info.MaxDosage}}" lay-verify="required|number"
+                   autocomplete="off" placeholder="请输入最大剂量值" class="layui-input" type="number" step="0.01">
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">剂量说明：</label>
+        <div class="layui-input-block">
+            <textarea name="dosage_desc" placeholder="请输入剂量说明（如炮制注意事项）"
+                      class="layui-textarea">{{.info.DosageDesc}}</textarea>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">启用状态：</label>
+        <div class="layui-input-block">
+            <input type="hidden" name="is_enabled" value="{{.info.IsEnabled}}">
+            <input type="checkbox" id="is_enabled" {{if eq .info.IsEnabled 1}}checked{{end}}
+                   lay-skin="switch" lay-filter="isEnabled" lay-text="启用|禁用">
+        </div>
+    </div>
+
+    <div class="layui-form-item text-center model-form-footer">
+        <button class="layui-btn" lay-filter="submitForm" lay-submit="">立即保存</button>
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">关闭</button>
+    </div>
+</form>
+<script>
+    layui.use(['form'], function(){
+        var form = layui.form;
+        var $ = layui.$;
+
+        // 状态开关处理逻辑
+        form.on('switch(isEnabled)', function(data){
+            $(data.elem).attr('type', 'hidden').val(this.checked ? 1 : 0);
+        });
+
+        // 表单提交验证扩展
+        form.verify({
+            maxDosage: function(value, item){
+                if(value && isNaN(value)){
+                    return '剂量值必须为数字';
+                }
+            }
+        });
+    });
+</script>
+{{end}}

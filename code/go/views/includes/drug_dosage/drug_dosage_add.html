@@ -1,0 +1,48 @@
+{{define "form"}}
+<form class="layui-form model-form" action="">
+    <div class="layui-form-item">
+        <label class="layui-form-label">药品ID：</label>
+        <div class="layui-input-block">
+            <input name="drug_id" lay-verify="required" autocomplete="off" placeholder="请输入关联药品ID"
+                   class="layui-input" type="text">
+            <div class="layui-form-mid layui-word-aux">关联药品表（t_drug_basic）的drug_id</div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">最大剂量：</label>
+        <div class="layui-input-block">
+            <input name="max_dosage" lay-verify="required|number" autocomplete="off" placeholder="请输入最大剂量值"
+                   class="layui-input" type="text">
+            <div class="layui-form-mid layui-word-aux">超过此值将触发超剂量预警</div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">剂量说明：</label>
+        <div class="layui-input-block">
+            <textarea name="dosage_desc" placeholder="请输入剂量说明（如“炮制后使用可降低毒性”）"
+                      class="layui-textarea"></textarea>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">是否启用：</label>
+        <div class="layui-input-block">
+            <input type="checkbox" name="is_enabled" lay-skin="switch" lay-text="启用|禁用" checked value="1">
+        </div>
+    </div>
+    <div class="layui-form-item text-center model-form-footer">
+        <button class="layui-btn" lay-filter="submitForm" lay-submit="">立即保存</button>
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">关闭</button>
+    </div>
+</form>
+<script>
+    layui.use(['form'], function(){
+        var form = layui.form,
+            $ = layui.$;
+
+        // 处理开关按钮的值转换（1=启用，0=禁用）
+        form.on('switch(is_enabled)', function(data) {
+            $(data.elem).val(this.checked ? 1 : 0);
+        });
+    });
+</script>
+{{end}}

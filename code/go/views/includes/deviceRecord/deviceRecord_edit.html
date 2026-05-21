@@ -1,0 +1,109 @@
+{{define "form"}}
+<form class="layui-form model-form" action="">
+    <input name="id" id="id" type="hidden" value="{{.info.ID}}">
+
+    <!-- 设备类型 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">设备类型：</label>
+        <div class="layui-input-block">
+            <input name="equipment_type" value="{{.info.EquipmentType}}" lay-verify="required"
+                   autocomplete="off" placeholder="请输入设备类型（如：服务器、交换机）" class="layui-input" type="text">
+        </div>
+    </div>
+
+    <!-- 设备编号 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">设备编号：</label>
+        <div class="layui-input-block">
+            <input name="equipment_id" value="{{.info.EquipmentID}}" lay-verify="required"
+                   autocomplete="off" placeholder="请输入设备唯一编号" class="layui-input" type="text">
+        </div>
+    </div>
+
+    <!-- 卫生状态 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">卫生状态：</label>
+        <div class="layui-input-block">
+            <input type="hidden" name="health_status" value="{{if .info.HealthStatus}}{{.info.HealthStatus}}{{else}}0{{end}}">
+            <input type="checkbox" id="health_status" {{if eq .info.HealthStatus 1}}checked{{end}}
+                   name="health_status" lay-skin="switch" lay-filter="health_status" lay-text="良好|较差">
+        </div>
+    </div>
+
+    <!-- 消毒状态 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">消毒状态：</label>
+        <div class="layui-input-block">
+            <input type="hidden" name="disinfection_status" value="{{if .info.DisinfectionStatus}}{{.info.DisinfectionStatus}}{{else}}0{{end}}">
+            <input type="checkbox" id="disinfection_status" {{if eq .info.DisinfectionStatus 1}}checked{{end}}
+                   name="disinfection_status" lay-skin="switch" lay-filter="disinfection_status" lay-text="已消毒|未消毒">
+        </div>
+    </div>
+
+    <!-- 运行状态 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">运行状态：</label>
+        <div class="layui-input-block">
+            <input type="hidden" name="status" value="{{if .info.Status}}{{.info.Status}}{{else}}0{{end}}">
+            <input type="checkbox" id="status" {{if eq .info.Status 1}}checked{{end}}
+                   name="status" lay-skin="switch" lay-filter="status" lay-text="正常|异常">
+        </div>
+    </div>
+
+    <!-- 巡检时间 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">巡检时间：</label>
+        <div class="layui-input-block">
+           
+            <input name="inspection_time"
+                   id="inspectionTime"
+                   value="{{.info.InspectionTime}}"
+            lay-verify="required"
+            autocomplete="off"
+            placeholder="请选择巡检时间"
+            class="layui-input"
+            type="datetime-local">
+        </div>
+    </div>
+
+    <!-- 巡检人员 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">巡检人员：</label>
+        <div class="layui-input-block">
+            <input name="inspector" value="{{.info.Inspector}}" lay-verify="required"
+                   autocomplete="off" placeholder="请输入巡检人员姓名" class="layui-input" type="text">
+        </div>
+    </div>
+
+    <!-- 提交按钮 -->
+    <div class="layui-form-item text-center model-form-footer">
+        <button class="layui-btn" lay-filter="submitForm" lay-submit="">立即保存</button>
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">关闭</button>
+    </div>
+</form>
+
+<script>
+    layui.use(['form'], function(){
+        var form = layui.form
+            ,$ = layui.$;
+
+        // 卫生状态开关逻辑（1=良好，0=较差）
+        form.on('switch(health_status)', function(data) {
+            $(data.elem).attr('type', 'hidden').val(this.checked ? 1 : 0);
+        });
+
+        // 消毒状态开关逻辑（1=已消毒，0=未消毒）
+        form.on('switch(disinfection_status)', function(data) {
+            $(data.elem).attr('type', 'hidden').val(this.checked ? 1 : 0);
+        });
+
+        // 运行状态开关逻辑（1=正常，0=异常）
+        form.on('switch(status)', function(data) {
+            $(data.elem).attr('type', 'hidden').val(this.checked ? 1 : 0);
+        });
+
+        // 渲染表单
+        form.render();
+    });
+</script>
+{{end}}

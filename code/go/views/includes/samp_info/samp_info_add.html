@@ -1,0 +1,84 @@
+{{define "form"}}
+<form class="layui-form model-form" action="" >
+    <div class="layui-form-item text-center model-form-footer">
+        <button class="layui-btn" lay-filter="submitForm" lay-submit="">立即保存</button>
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">关闭</button>
+    </div>
+</form>
+    <fieldset class="layui-elem-field" style="margin-top: 10px; color:#126d07">
+        <legend>抽检信息</legend>
+        <div class="layui-field-box">
+            <div class="layui-form-item">
+
+                <div class="layui-inline">
+                    <label class="layui-form-label" style="color:red">处方号</label>
+                    <div class="layui-input-inline" style="width:515px">
+                        <input  type="text" name="prescription_number" id="prescription_number" lay-verify="prescription_number|required"  autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">处方重量</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="prescription_weight"   id="prescription_weight" autocomplete="on" class="layui-input"><!-- 去除此input的lay_verify-->
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" style="color:red"><span class="star">*</span>实际重量</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="prescription_sj_weight" id="prescription_sj_weight" lay-verify="required" autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" >药品味数</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="drug_count" id="drug_count" autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" style="color:red">实际味数</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="drug_sj_count" id="drug_sj_count" lay-verify="number|required" autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label" style="color:red"><span class="star">*</span>贴数</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="dosage" id="dosage" lay-verify="number|required"  autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label" style="color:red">*检测结果</label>
+                    <div class="layui-input-inline">
+                        <select name="status" id="status" lay-verify="number|required">
+                            <option value="1">合格</option>
+                            <option value="2">不合格</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" style="color:red">质检时间</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="operate_time" id="operate_time" lay-verify="operate_time|required"  autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" style="color:red">检测人</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="operate_name" id="operate_name"  lay-verify="operate_name|required" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="remark" id="remark" autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </fieldset>
+{{end}}

@@ -1,0 +1,35 @@
+{{define "form"}}
+<style type="text/css">
+    .layui-upload-drag {
+        position: relative;
+        padding: 10px;
+        border: 1px dashed #e2e2e2;
+        background-color: #fff;
+        text-align: center;
+        cursor: pointer;
+        color: #999;
+    }
+</style>
+<form class="layui-form model-form" action="">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">扫描条码：</label>
+            <div class="layui-input-inline">
+                <input name="barcode" lay-verify="required" autocomplete="off" placeholder="请扫描条码" class="layui-input" type="text">
+            </div>
+        </div>
+
+        <div class="layui-inline text-center model-form-footer">
+            <button class="layui-btn" lay-filter="submitForm" lay-submit="">立即扫描</button>
+        </div>
+    </div>
+</form>
+<script>
+    layui.use(['form'], function(){
+        var form = layui.form,
+            $ = layui.$;
+
+        form.on('switch(status)', function(data) {
+            $(data.elem).attr('type', 'hidden').val(this.checked ? 1 : 2);})})
+</script>
+{{end}}

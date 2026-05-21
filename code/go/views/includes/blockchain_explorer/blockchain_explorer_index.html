@@ -1,0 +1,250 @@
+{{define "content"}}
+<div class="layui-container">
+
+    <div class="layui-row">
+        <div class="layui-col-xs6">
+            <!-- 统计信息 -->
+            <form class="layui-form" action="">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">查询条件</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="query"  required lay-verify="required" placeholder="区块哈希/交易ID/区块高度" autocomplete="off" class="layui-input">
+                    </div>
+                    <div class="layui-input-inline">
+                     <button  type="submit" class="layui-btn" lay-submit lay-filter="formDemo"><i class="layui-icon">查询</i></button>
+                    </div>
+                </div>
+
+            </form>
+            <div class="layui-bg-gray" style="padding: 16px;">
+                <div class="layui-row layui-col-space12">
+
+                    <div class="layui-col-md4">
+
+                        <div class="layui-card">
+
+                            <div class="layui-card-header"> <img src="/static/admin/image/height.png" alt="区块高度图标" style="float: left; margin-right: 10px; height: 40px;"> <!-- 添加的图片 -->区块高度</div>
+
+                            <div class="layui-card-body">
+
+                                {{.BlockHeight}}<br>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <div class="layui-col-md4">
+
+                        <div class="layui-card">
+                            <img src="/static/admin/image/longestIcon.png" alt="区块高度图标" style="float: left; margin-right: 10px; height: 40px;">
+                            <div class="layui-card-header">累计交易数</div>
+
+                            <div class="layui-card-body">
+
+
+                             {{.TotalTransactions}}
+
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <div class="layui-col-md4">
+
+                        <div class="layui-card">
+                            <img src="/static/admin/image/totalSyncIcon.png" alt="累计合约数" style="float: left; margin-right: 10px; height: 40px;">
+                            <div class="layui-card-header">累计合约数</div>
+
+                            <div class="layui-card-body">
+
+                                3
+
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="layui-row layui-col-space12">
+
+                    <div class="layui-col-md4">
+
+                        <div class="layui-card">
+
+                            <div class="layui-card-header">                            <img src="/static/admin/image/shortestIcon.png" alt="组织图标" style="float: left; margin-right: 8px; height: 40px;">组织数</div>
+
+                            <div class="layui-card-body">
+
+
+                                {{.OrganizationCount}}
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="layui-col-md4">
+
+                        <div class="layui-card">
+                            <img src="/static/admin/image/shortestIcon.png" alt="节点数量图标" style="float: left; margin-right: 10px; height: 40px;">
+                            <div class="layui-card-header">节点数量</div>
+
+                            <div class="layui-card-body">
+
+
+                                {{.PeerCount}}
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <div class="layui-col-md4">
+
+                        <div class="layui-card">
+                            <img src="/static/admin/image/user.png" alt="用户数量图标" style="float: left; margin-right: 10px; height: 40px;">
+                            <div class="layui-card-header">用户数量</div>
+
+                            <div class="layui-card-body">
+
+                                6
+
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+
+
+
+        </div>
+
+    </div>
+        <div class="layui-col-xs6">
+            <div class="layui-col-md12">
+            <div class="layui-row layui-col-space12">
+                <div class="layui-card" >
+                    <div class="layui-card-body" >
+                        <div id="transactionChart" style="width:400px;height:300px;"></div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+    </div>
+    <div class="layui-row">
+        <div class="layui-col-md6">
+            <!-- 最新区块和交易列表 -->
+            <div class="layui-card">
+                <div class="layui-card-header">最新区块</div>
+                <div class="layui-card-body">
+                    <table class="layui-table">
+                        <thead>
+                        <tr><th>区块号</th><th>交易数</th><th>出块节点</th></tr>
+                        </thead>
+                        <tbody>
+                        {{range .LatestBlocks}}
+                        <tr><td>{{.Number}}</td><td>{{.Transactions}}</td><td>{{.Node}}</td></tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md6 ">
+            <div class="layui-card">
+                <div class="layui-card-header">最新交易</div>
+                <div class="layui-card-body">
+                    <table class="layui-table">
+                        <thead>
+                        <tr><th>交易ID</th><th colspan="4" align="center">时间</th></tr>
+                        </thead>
+                        <tbody>
+                        {{range .RecentTransactions}}
+                        <tr><td>{{.ID}}</td ><td colspan="4">{{.Time}}</td></tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+    layui.use(['form'], function(){
+        var form = layui.form;
+
+        // 假设后端已经提供了交易数据
+        var transactionData =[{"time":"23:00","count":1},{"time":"03:00","count":6},{"time":"06:00","count":3},{"time":"09:00","count":7},{"time":"14:00","count":11},{"time":"17:00","count":29},{"time":"20:00","count":5},{"time":"23:00","count":2}] ;
+
+        // 格式化时间数据为ECharts可接受的格式
+        var categories = transactionData.map(function(item) {
+            return  item.time;
+        });
+        var values = transactionData.map(function(item) {
+            return item.count;
+        });
+
+        // 初始化ECharts
+        var chartDom = document.getElementById('transactionChart');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        option = {
+            title: {
+                text: '24小时交易数量'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: categories
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: '交易数量',
+                    type: 'line',
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    data: values
+                }
+            ]
+        };
+
+        option && myChart.setOption(option);
+    });
+</script>
+
+{{end}}

@@ -1,0 +1,43 @@
+{{define "form"}}
+<form class="layui-form model-form" action="">
+<div class="layui-field-box">
+    <fieldset class="layui-elem-field layui-field-title" style="margin: 20px 0;">
+        <legend class="layui-center">调拨明细单</legend>
+    </fieldset>
+
+    <div class="layui-form-item">
+        <div class="layui-table-container">
+            <table class="layui-table" lay-size="sm">
+                <thead>
+                <tr>
+                    <th>调拨单号</th>
+                    <th>药品名称</th>
+                    <th>药品ID</th>
+                    <th>调拨数量</th>
+                    <th>批次号</th>
+                    <th>备注</th>
+
+                </tr>
+                </thead>
+                <tbody id="transferTable">
+                {{range .medicines}}
+                <tr>
+                    <td>{{.TransferID}}</td>
+                    <td>{{.ProductName}}</td>
+                    <td>{{.ProductID}}</td>
+                    <td>{{.Quantity}}</td>
+                    <td>{{.BatchNo}}</td>
+                    <td>{{.Remark}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" class="layui-center">暂无调拨数据</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</form>
+{{end}}

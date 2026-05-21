@@ -1,0 +1,231 @@
+{{define "form"}}
+<form class="layui-form model-form" id="submitForm">
+    <div class="layui-form-item text-center model-form-footer">
+        <button class="layui-btn" lay-submit lay-filter="submitForm">立即保存</button>
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">关闭</button>
+    </div>
+
+    <!-- 调拨主信息 -->
+    <fieldset class="layui-elem-field" style="margin-top: 10px; color:#126d07">
+        <legend>调拨基本信息</legend>
+        <div class="layui-field-box">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label"><span class="star">*</span>调拨单号</label>
+                    <div class="layui-input-inline" style="width:515px">
+                        <input type="text" name="order_no"
+                               lay-verify="required"
+                               autocomplete="on"
+                               class="layui-input"
+                             >
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label"><span class="star">*</span>调出仓库</label>
+                    <div class="layui-input-inline">
+                        <select name="from_warehouse_id"
+                                lay-verify="required"
+                                lay-search>
+                            <option value="">请选择调出仓库</option>
+                            <option value="1">仓库</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label"><span class="star">*</span>调入仓库</label>
+                    <div class="layui-input-inline">
+                        <select name="to_warehouse_id"
+                                lay-verify="required"
+                                lay-search>
+                            <option value="">请选择调入药房</option>
+                            <option value="2">药房</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label"><span class="star">*</span>操作人</label>
+                    <div class="layui-input-inline">
+                        <select name="operator_id"
+                                lay-verify="required"
+                                lay-search>
+                            <option value="">请选择操作人</option>
+                            <option value="101">张三</option>
+                            <option value="102">李四</option>
+                            <option value="103">王五</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">备注</label>
+                <div class="layui-input-block">
+          <textarea name="remark"
+                    placeholder="请输入备注信息"
+                    class="layui-textarea"></textarea>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- 调拨明细 -->
+    <div class="layui-form-item">
+        <label class="layui-form-label">调拨药品</label>
+        <div class="layui-input-block">
+            <table class="layui-table" id="transferItemsTable">
+                <thead>
+                <tr>
+                    <th>药品名称</th>
+                    <th>药品编码</th>
+                    <th>数量</th>
+                    <th>批次号</th>
+                    <th>生产日期</th>
+                    <th>过期日期</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="transferItems">
+                <!-- 动态行会在这里生成 -->
+                </tbody>
+            </table>
+            <button type="button" class="layui-btn" id="addTransferItem">新增药品</button>
+        </div>
+    </div>
+</form>
+
+<script>
+    $(document).ready(function(){
+        $('#order_no').val('RK'+ new Date().getTime());
+    });
+    layui.use(['form', 'laydate', 'jquery'], function(){
+        const form = layui.form;
+        const laydate = layui.laydate;
+        const $ = layui.jquery;
+
+        // 初始化日期选择器
+        laydate.render({
+            elem: 'input[name="production_date"]',
+            format: 'yyyy-MM-dd'
+        });
+        laydate.render({
+            elem: 'input[name="expiry_date"]',
+            format: 'yyyy-MM-dd'
+        });
+
+        // 初始化一条空行
+        initEmptyRow();
+
+        // 新增药品行
+        $('#addTransferItem').click(function(){
+            const index = $('#transferItems tr').length;
+            const newRow = `<tr>
+      <td>
+        <input type="text"
+               name="medicines[${index}].product_name"
+               class="layui-input"
+               lay-verify="required">
+      </td>
+      <td>
+        <input type="text"
+               name="medicines[${index}].product_id"
+               class="layui-input">
+      </td>
+      <td>
+        <input type="number"
+               name="medicines[${index}].quantity"
+               class="layui-input quantity"
+               min="0" step="0.01">
+      </td>
+      <td>
+        <input type="text"
+               name="medicines[${index}].batch_no"
+               class="layui-input">
+      </td>
+      <td>
+        <input type="text"
+               name="medicines[${index}].production_date"
+               class="layui-input date-input"
+               onclick="layui.laydate({elem: this, format: 'YYYY-MM-DD'})">
+      </td>
+      <td>
+        <input type="text"
+               name="medicines[${index}].expiry_date"
+               class="layui-input date-input"
+               onclick="layui.laydate({elem: this, format: 'YYYY-MM-DD'})">
+      </td>
+      <td>
+        <button type="button"
+                class="layui-btn layui-btn-sm layui-btn-danger"
+                onclick="$(this).closest('tr').remove(); updateTotalQuantity()">删除</button>
+      </td>
+    </tr>`;
+
+            $('#transferItems').append(newRow);
+            laydate.render({
+                elem: '.date-input',
+                format: 'yyyy-MM-dd'
+            });
+            form.render();
+        });
+
+        // 初始化空行
+        function initEmptyRow() {
+            $('#transferItems').html(`
+      <tr>
+        <td>
+          <input type="text"
+                 name="medicines[0].product_name"
+                 class="layui-input"
+                 lay-verify="required">
+        </td>
+        <td>
+          <input type="text"
+                 name="medicines[0].product_id"
+                 class="layui-input"
+                 >
+        </td>
+        <td>
+          <input type="number"
+                 name="medicines[0].quantity"
+                 class="layui-input quantity"
+                 min="0" step="0.01"
+                 lay-verify="required|number">
+        </td>
+        <td>
+          <input type="text"
+                 name="medicines[0].batch_no"
+                 class="layui-input">
+        </td>
+        <td>
+          <input type="text"
+                 name="medicines[0].production_date"
+                 class="layui-input date-input"
+                 onclick="layui.laydate({elem: this, format: 'YYYY-MM-DD'})">
+        </td>
+        <td>
+          <input type="text"
+                 name="medicines[0].expiry_date"
+                 class="layui-input date-input"
+                 onclick="layui.laydate({elem: this, format: 'YYYY-MM-DD'})">
+        </td>
+        <td>
+          <button type="button"
+                  class="layui-btn layui-btn-sm layui-btn-danger"
+                  onclick="$(this).closest('tr').remove(); updateTotalQuantity()">删除</button>
+        </td>
+      </tr>
+    `);
+            laydate.render({
+                elem: '.date-input',
+                format: 'yyyy-MM-dd'
+            });
+            form.render();
+        }
+
+
+    });
+</script>
+{{end}}

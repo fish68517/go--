@@ -1,0 +1,58 @@
+{{define "form"}}
+<div class="layui-inline">
+    <a id="print" class="layui-btn layui-btn-primary layui-btn-sm">
+        <i class="layui-icon layui-icon-print" style="padding: 0 900px">打印</i>
+    </a>
+</div>
+<div  id="printArea" >
+    <form class="layui-form model-form" action="">
+        <div class="layui-field-box">
+            <div id="barcode-container">
+                <div class="layui-input-inline">
+                    <div id="qrcode" class="layui-input-inline"></div><br/>
+                    <span id="barcode">{{.info.DeviceName}}</span><br/>
+                </div>
+            </div>
+        </div>
+    </form>
+
+
+</div>
+<!-- QRCode生成器 -->
+<script src="../../../static/assets/js/qrcode/qrcode.min.js"></script>
+<script>
+    var qrcode = new QRCode(document.getElementById("qrcode"), {
+        width : 100,
+        height : 100
+    });
+    var elText = $("#barcode").text();
+    qrcode.makeCode(elText);
+
+    $("#print").click(function () {
+        var printArea = document.getElementById('printArea').innerHTML;
+        var originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printArea;
+        window.print();
+        document.body.innerHTML = originalContents;
+    })
+    layui.use(['form'], function(){
+        var form = layui.form,
+            $ = layui.$;
+
+        form.on('switch(status)', function(data) {
+            $(data.elem).attr('type', 'hidden').val(this.checked ? 1 : 2);})
+    })
+</script>
+<style>
+    #barcode-container {
+        float: left;
+        margin-right: 20px; /* 根据需要调整间距 */
+        text-align: center;
+    }
+    #qrcode {
+        margin-top: 12px; /* 根据需要调整间距 */
+    }
+
+</style>
+{{end}}

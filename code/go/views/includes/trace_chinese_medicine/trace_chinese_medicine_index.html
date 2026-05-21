@@ -1,0 +1,74 @@
+{{define "content"}}
+<div class="layui-container">
+  <div class="layui-row">
+    <div class="layui-col-md6 layui-col-md-offset3">
+      <form class="layui-form" action="" lay-filter="queryForm">
+        <div class="layui-form-item">
+          <label class="layui-form-label">处方号</label>
+          <div class="layui-input-inline">
+            <input type="text" name="rx_number" required lay-verify="required" placeholder="请输入处方号" autocomplete="off" class="layui-input">
+          </div>
+          <div class="layui-input-inline">
+            <button class="layui-btn" lay-submit lay-filter="submitQuery">查询</button>
+          </div>
+        </div>
+
+      </form>
+
+      <div id="result" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/layui@2.7.7/dist/layui.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  layui.use(['form', 'layer'], function(){
+    var form = layui.form;
+    var layer = layui.layer;
+
+    // 监听提交
+    form.on('submit(submitQuery)', function(data){
+      var rxNumber = data.field.rx_number;
+      $.ajax({
+        url: '/trace_chinese_medicine/flow',
+        type: 'GET',
+        data: { rx_number: rxNumber },
+        dataType: 'json',
+        success: function(response) {
+          if (response.code === 0) {
+            var resultDiv = $('#result');
+            resultDiv.empty();
+            // // 显示区块高度、区块hash、交易id
+            // var info = '<p>区块高度: ' + response.data.BlockHeight + '</p>';
+            // info += '<p>区块Hash: ' + response.data.BlockHash + '</p>';
+            // info += '<p>交易ID: ' + response.data.TxId + '</p>';
+
+            // 显示时间轴
+            var timeline = '<ul class="layui-timeline">';
+            response.data.process.forEach(function(step) {
+              timeline += '<li class="layui-timeline-item">';
+              timeline += '<i class="layui-icon layui-icon-log"></i>';
+              timeline += '<div class="layui-timeline-content layui-text">';
+              timeline += '<h3 class="layui-timeline-title">' + step.Step + '</h3>';
+              timeline += '<p><strong>执行者:</strong> ' + step.Performer + '</p>';
+              timeline += '<p><strong>时间:</strong> ' + step.Timestamp + '</p>';
+              timeline += '</div>';
+              timeline += '</li>';
+            });
+            timeline += '</ul>';
+
+            resultDiv.append(timeline);
+          } else {
+            layer.msg('查询失败: ' + response.message);
+          }
+        },
+        error: function() {
+          layer.msg('查询失败，请稍后再试。');
+        }
+      });
+      return false; // 阻止表单跳转。如果需要表单跳转，去掉这段即可。
+    });
+  });
+</script>
+{{end}}

@@ -1,0 +1,156 @@
+{{define "form"}}
+<form class="layui-form model-form" action="" >
+    <div class="layui-form-item text-center model-form-footer">
+        <button class="layui-btn" lay-filter="submitForm" lay-submit="">立即保存</button>
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">关闭</button>
+    </div>
+    <fieldset class="layui-elem-field" style="margin-top: 10px; color:#126d07">
+        <legend>入库基本信息</legend>
+        <div class="layui-field-box">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">入库单号</label>
+                    <div class="layui-input-inline" style="width:515px">
+                        <input  type="text" name="order_no" id="order_no" autocomplete="on" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">请选择仓库</label>
+                    <div class="layui-input-inline">
+                        <select  name="warehouse_id" id="warehouse_id">
+                            <option value="1">仓库</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                                   <select name="operator_id"  id="operator_id" lay-verify="required">
+                                      <option value="">请选择操作人</option>
+                                      <option value="101">张三</option>
+                                      <option value="102">李四</option>
+                                      <option value="103">王五</option>
+                                    </select>
+                                 </div>
+                </div>
+            </div>
+        </div>
+
+    </fieldset>
+</form>
+<!-- 药品列表（明细） -->
+<div class="layui-form-item">
+    <label class="layui-form-label">药品列表</label>
+    <div class="layui-input-block">
+        <table class="layui-table" id="tableTest">
+            <thead>
+            <tr>
+                <th>药品名称</th>
+                           <th>药品编码</th>
+                           <th>数量</th>
+                           <th>单价</th>
+                           <th>金额</th>
+                            <th>批次号</th>
+                           <th>生产日期</th>
+                           <th>过期日期</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="medicinesTable">
+            </tbody>
+        </table>
+        <button type="button" class="layui-btn" id="addRow">新增药品</button>
+    </div>
+
+</div>
+<script>
+    // 静态中药数据（6种）
+    const herbalMedicineData = [
+        { id: "H001", name: "人参", code: "RS001", pinyin: "Ren Shen" },
+        { id: "H002", name: "黄芪", code: "HQ002", pinyin: "Huang Qi" },
+        { id: "H003", name: "当归", code: "DG003", pinyin: "Dang Gui" },
+        { id: "H004", name: "枸杞", code: "GQ004", pinyin: "Gou Qi" },
+        { id: "H005", name: "三七", code: "SQ005", pinyin: "San Qi" },
+        { id: "H006", name: "金银花", code: "JYH06", pinyin: "Jin Yin Hua" }
+    ];
+
+    $(document).ready(function(){
+        $('#order_no').val('RK'+ new Date().getTime());
+        initHerbalSelect();
+
+        // 计算总价
+        $(document).on('input', '.priceInput, .quantityInput', function(){
+            const $tr = $(this).closest('tr');
+            const price = parseFloat($tr.find('.priceInput').val()) || 0;
+            const quantity = parseFloat($tr.find('.quantityInput').val()) || 0;
+            const total = price * quantity;
+            $tr.find('.totalPriceInput').val(total.toFixed(2));
+        });
+    });
+
+    function initHerbalSelect() {
+        // 中药选择事件
+        $(document).on('change', '.herbalSelect', function(){
+            const $tr = $(this).closest('tr');
+            const selectedId = $(this).val();
+            const medicine = herbalMedicineData.find(m => m.id === selectedId);
+            $tr.find('.productCodeInput').val(medicine ? medicine.code : '');
+        });
+    }
+
+    $(document).on('click', '#addRow', function(){
+        const index = $('#medicinesTable tr').length;
+        let newRow = `
+    <tr>
+        <td>
+            <select name="medicines[${index}].product_name"
+                    class="layui-form-danger herbalSelect"
+                    style="width: 150px; padding: 5px;"
+                    lay-verify="required">
+                <option value="">请选择中药</option>
+                ${herbalMedicineData.map(m =>
+            `<option value="${m.id}" data-pinyin="${m.pinyin}">${m.name} (${m.pinyin})</option>`).join('')}
+            </select>
+        </td>
+        <td>
+            <input type="text" name="medicines[${index}].product_id"
+                   class="layui-input productCodeInput" readonly>
+        </td>
+        <td><input type="number" name="medicines[${index}].quantity"
+                   class="layui-input quantityInput"
+                   lay-verify="required|number" min="1"></td>
+        <td><input type="number" name="medicines[${index}].unit_price"
+                   class="layui-input priceInput"
+                   lay-verify="required|number" min="0" step="0.01"></td>
+        <td><input type="text" name="medicines[${index}].amount"
+                   class="layui-input totalPriceInput" readonly></td>
+        <td><input type="text" name="medicines[${index}].batch_no"
+                   class="layui-input" maxlength="20"></td>
+        <td><input type="date" name="medicines[${index}].production_date"
+                   class="layui-input"></td>
+        <td><input type="date" name="medicines[${index}].expiry_date"
+                   class="layui-input"></td>
+        <td><button type="button" class="layui-btn layui-btn-danger layui-btn-sm deleteRow">删除</button></td>
+    </tr>`;
+
+        $('#medicinesTable').append(newRow);
+        layui.form.render('select'); // 渲染LayUI下拉组件
+
+        // 添加拼音联想功能
+        $('.herbalSelect').on('input', function(){
+            const val = $(this).val().toLowerCase();
+            $(this).find('option').each(function(){
+                const optionText = $(this).text().toLowerCase();
+                const pinyin = $(this).data('pinyin').toLowerCase();
+                const showText = val ? (optionText.includes(val) || pinyin.includes(val)) : true;
+                $(this).toggle(showText);
+            });
+        });
+    });
+
+    // 删除药品行
+    $(document).on('click', '.deleteRow', function(){
+        $(this).closest('tr').remove();
+    });
+</script>
+{{end}}
