@@ -36,7 +36,7 @@ JWT:
 Database:
   DBType: mysql
   UserName: root
-  Password: 123456
+  Password: root
   Host: 127.0.0.1:3306
   DBName: hgy
   TablePrefix: oh_

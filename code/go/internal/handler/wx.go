@@ -111,10 +111,8 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 		})
 		return
 	}
-	medicines, _ := svc.BuildTraceMedicineItems(svc.GetCtx(), prescriptionView.Id)
-	payment, _ := svc.BuildTracePayment(svc.GetCtx(), prescriptionView.Id)
 	fmt.Print("prescriptionView=", prescriptionView)
-	tisaneRecord := &dto.TisaneRecord{
+	chainRecord := &dto.TisaneRecord{
 		HospitalName:       prescriptionView.HospitalName,
 		PatientName:        prescriptionView.PatientName,
 		PrescriptionNumber: prescriptionView.PrescriptionNumber,
@@ -138,12 +136,8 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 		DeliveryPersonnel:  prescriptionView.DeliveryPersonnel,
 		DeliveryTime:       prescriptionView.DeliveryTime,
 		LogisticsNumber:    prescriptionView.LogisticsNumber,
-		Medicines:          medicines,
-		Payment:            payment,
 	}
-	// 声明一个 TisaneRecord 类型的切片（数组）
-	var tisaneRecords []*dto.TisaneRecord
-	err := ValidateTimes(tisaneRecord)
+	err := ValidateTimes(chainRecord)
 	if err != nil {
 		response.ToResponse(dto.SuccessResponse{
 			Msg:  "数据不完整=" + err.Error(),
@@ -151,10 +145,10 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 		})
 		return
 	}
-	// 将 tisaneRecord 添加到切片中
-	tisaneRecords = append(tisaneRecords, tisaneRecord)
-	tisaneRecordJson, _ := json.Marshal(tisaneRecords)
-	hashBytes := sha256.Sum256(tisaneRecordJson)
+	// 外部链服务对字段做严格校验，只提交其已支持的流程字段。
+	// 药材源地和支付信息保存在本地表中，由本系统溯源接口合并展示。
+	chainPayload, _ := json.Marshal([]*dto.TisaneRecord{chainRecord})
+	hashBytes := sha256.Sum256(chainPayload)
 	payloadHash := hex.EncodeToString(hashBytes[:])
 	chainLog := &model.BlockchainTraceLog{
 		PrescriptionID:     prescriptionView.Id,
@@ -163,9 +157,9 @@ func (h *wxHandler) UploadChain(ctx *gin.Context) {
 		ChainStatus:        "PENDING",
 	}
 	_ = svc.SaveBlockchainTraceLog(svc.GetCtx(), chainLog)
-	fmt.Println("json串：--", string(tisaneRecordJson))
+	fmt.Println("json串：--", string(chainPayload))
 	url := global.AppSetting.UpChain
-	respBody, err := PostJSON(url, tisaneRecordJson)
+	respBody, err := PostJSON(url, chainPayload)
 	if err != nil {
 		fmt.Printf("错误: %v\n", err)
 		chainLog.ChainStatus = "FAILED"

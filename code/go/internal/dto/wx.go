@@ -42,6 +42,4 @@ type TisaneRecord struct {
 	DeliveryPersonnel  string `json:"delivery_personnel,omitempty"`
 	DeliveryTime       string `json:"delivery_time,omitempty"`
 	LogisticsNumber    string `json:"logistics_number,omitempty"`
-	Medicines          []TraceMedicineItem `json:"medicines,omitempty"`
-	Payment            TracePayment        `json:"payment,omitempty"`
 }

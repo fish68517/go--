@@ -28,7 +28,16 @@
     <div v-else>
       <div v-if="hasProcesses">
         <!-- 显示查询结果 -->
-        <Timeline :processes="processes" />
+        <div class="timeline">
+          <div v-for="(process, index) in processes" :key="index" class="timeline-item">
+            <div class="timeline-circle"></div>
+            <div class="timeline-content">
+              <h3>{{ process.Step }}</h3>
+              <p>{{ process.Performer }}</p>
+              <span>{{ process.Timestamp }}</span>
+            </div>
+          </div>
+        </div>
         <section v-if="medicines.length" class="trace-panel">
           <h3>药材来源明细</h3>
           <table class="trace-table">
@@ -81,16 +90,12 @@
 
 <script>
 import axios from 'axios';
-import Timeline from './components/Timeline.vue';
 
 // 配置axios默认基础路径（配合代理使用）
 axios.defaults.baseURL = '/api';
 
 export default {
   name: 'App',
-  components: {
-    Timeline,
-  },
   data() {
     return {
       showForm: true,
@@ -242,6 +247,55 @@ export default {
 }
 .query-button:hover {
   background-color: #359469; /* 增加hover效果 */
+}
+.timeline {
+  position: relative;
+  max-width: 1080px;
+  margin: 24px auto;
+  padding-left: 40px;
+  text-align: left;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  height: 100%;
+  width: 6px;
+  background: linear-gradient(to bottom, #34a853, #005f4f);
+  z-index: -1;
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 42px;
+}
+.timeline-circle {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  width: 48px;
+  height: 48px;
+  background-color: #34a853;
+  border: 4px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgba(52, 168, 83, 0.3);
+}
+.timeline-content {
+  padding-left: 70px;
+}
+.timeline-content h3 {
+  margin: 0;
+  font-size: 1.75em;
+  font-weight: bold;
+  color: #333;
+}
+.timeline-content p {
+  margin: 10px 0;
+  color: #666;
+}
+.timeline-content span {
+  color: #999;
+  font-size: 0.95em;
 }
 .trace-panel {
   max-width: 1080px;
